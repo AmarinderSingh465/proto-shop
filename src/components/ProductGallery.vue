@@ -1,20 +1,99 @@
 <template>
-  <div id="product-gallery">
-    <ProductCard :product="product" v-for="product in products" :key="product.id"/> 
+  <div>
+    <div class="searchbar">
+      <SearchBar v-if="displaySearch"></SearchBar>
+     
+    </div>
+    <form action="" class="search-container">
+      <CategorySelector :categories="categories" v-model="selected" />
+      <input class="search-input" type="text" v-model="searchTerm" placeholder="Search by Title" @input="filterProducts" />
+      <button class="search-btn">
+        Search <font-awesome-icon :icon="['fas', 'magnifying-glass']" />
+      </button>
+    </form>
+    <div id="product-gallery">
+      <ProductCard :product="product" v-for="product in filteredProducts" :key="product.id" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import ProductCard from './ProductCard.vue'
-import type Product from '@/types/product'
+import { ref, computed } from 'vue';
+import ProductCard from './ProductCard.vue';
+import CategorySelector from './CategorySelector.vue';
+import type Product from '@/types/product';
 
-const response = await fetch('https://dummyjson.com/products')
-const data = await response.json()
-const products: Product[] = data.products
+const response = await fetch('https://dummyjson.com/products');
+const data = await response.json();
+const products: Product[] = data.products;
 
+const selected = ref('');
+const searchTerm = ref('');
 
+const categories = products.reduce((acc: string[], curr) => {
+  if (!acc.includes(curr.category)) {
+    acc.push(curr.category);
+  }
+  return acc;
+}, []);
+
+const filteredProducts = computed(() => {
+  if (!selected.value && !searchTerm.value) return products;
+  return products.filter((product) => {
+    if (selected.value && product.category !== selected.value) {
+      return false;
+    }
+    if (searchTerm.value && !product.title.toLowerCase().includes(searchTerm.value.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+});
+
+function filterProducts() {
+  // Trigger computed property to update the filtered products
+  filteredProducts.value;
+}
+
+const displaySearch = ref(false);
+
+function showSearch() {
+  displaySearch.value = !displaySearch.value;
+}
 </script>
 
+<style>
+.search-input{
+  width: 100%;
+  height: 2em;
+  max-width: 1280px;
+  line-height: 1.5rem;
+  font-size: 1.25rem;
+  border: none;
+  border-bottom: 2px solid var(--persian-rose) ;
+  background-color: var(--color-background-soft);
+  color: var( --vt-c-text-dark-2);
+}
+
+.search-container{
+    display: flex;
+    width: 100%;
+}
+
+.search-btn{
+  color: var(--persian-rose);
+  border: none;
+  background-color: transparent;
+  border-bottom: 2px solid var(--persian-rose);
+  border-right: 2px solid var(--persian-rose);
+}
+
+
+.search-input:focus, .search-btn:focus{
+  outline: none;
+  box-shadow:0.4em 0.4em 2em var(--brilliant-azure);
+}
+</style>
 
 
 <style>
@@ -44,4 +123,5 @@ const products: Product[] = data.products
 .dollar {
   color: var(--accent-clr);
 }
+
 </style>
